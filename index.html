@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+    <script>
+      // const globalReport = (url, params = {}) => {
+      //   const tmpList = []
+      //   for (const k of Object.keys(params)) {
+      //     tmpList.push(`${k}=${params[k]}`)
+      //   }
+      //   const fullUrl = `${url}?${tmpList.join('&')}`
+      //   const img = new Image()
+      //   img.src = fullUrl
+      // }
+
+      const globalGetStackInfo = (stack) => {
+        if (typeof stack === 'string') {
+          const matchResult = stack.match(/at\s+(.+):(\d+):(\d+)/)
+          if (matchResult) {
+            return {
+              fileName: matchResult[1],
+              line: matchResult[2],
+              column: matchResult[3]
+            }
+          }
+        }
+      }
+      window.addEventListener(
+        'error',
+        (event) => {
+          console.log('error: ', event)
+          const target = event.target
+          let data = {}
+          if (target && (target.src || target.href)) {
+            data = {
+              url: location.href,
+              fileName: target.src || target.href,
+              mainType: 'error',
+              subType: 'resourceError'
+            }
+          } else {
+            data = {
+              url: location.href,
+              mainType: 'error',
+              subType: 'jsError',
+              stack: event?.error?.stack,
+              fileName: event.filename,
+              line: event.lineno,
+              column: event.colno,
+              message: event.message
+            }
+          }
+          // globalReport('http://localhost:3000/api/monitor/report', data)
+          navigator.sendBeacon('http://localhost:3000/api/monitor', JSON.stringify(data))
+        },
+        true
+      )
+      window.addEventListener(
+        'unhandledrejection',
+        (event) => {
+          console.log('unhandledrejection: ', event)
+          let message, stack, fileName, line, column
+          const reason = event.reason
+          if (typeof reason === 'string') {
+            message = reason
+          } else if (typeof reason === 'object') {
+            message = reason.message
+            if (reason.stack) {
+              const stackInfo = globalGetStackInfo(reason.stack)
+              stack = reason.stack
+              fileName = stackInfo.fileName
+              line = Number(stackInfo.line)
+              column = Number(stackInfo.column)
+            }
+          }
+          data = {
+            url: location.href,
+            mainType: 'error',
+            subType: 'promiseError',
+            stack,
+            fileName,
+            line,
+            column,
+            message
+          }
+          // globalReport('http://localhost:3000/api/monitor/report', data)
+          navigator.sendBeacon('http://localhost:3000/api/monitor', JSON.stringify(data))
+        },
+        true
+      )
+    </script>
+    <link href="http://localhost:3000/notfound.css" rel="stylesheet" />
+    <script crossorigin src="http://localhost:3000/error.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
