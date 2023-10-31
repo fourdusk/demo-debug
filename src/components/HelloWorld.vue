@@ -1,8 +1,16 @@
 <template>
   <div>{{ count }}</div>
   <TButton @click="handleIncrease">+</TButton>
-  <div v-for="item in list" :key="item.id">{{ item.firstname }} {{ item.lastname }}</div>
-
+  <TTable
+    :data="list"
+    :columns="columns"
+    :loading="loading"
+    rowKey="id"
+    stripe
+    bordered
+    resizable
+  />
+  <TButton @click="getList">刷新</TButton>
   <img width="100" src="https://sponsors.vuejs.org/images/notfound.png" />
 </template>
 
@@ -11,20 +19,34 @@ import { ref, onMounted } from 'vue'
 
 type Item = {
   id: number
-  firstname: string
-  lastname: string
+  from: string
+  from_who: string
+  hitokoto: string
 }
 
 const count = ref(0)
+const loading = ref(false)
 const list = ref<Item[]>([])
+const columns = ref([
+  { title: '诗名', colKey: 'from' },
+  { title: '作者', colKey: 'from_who' },
+  { title: '诗句', colKey: 'hitokoto' }
+])
+
+const getList = async () => {
+  const promiseList = []
+  for (let i = 0; i < 5; i++) {
+    promiseList.push(fetch('https://v1.hitokoto.cn?c=i').then((r) => r.json()))
+  }
+  loading.value = true
+  const result = await Promise.all(promiseList)
+  loading.value = false
+  list.value = result
+}
 
 onMounted(async () => {
-  for (let i = 0; i < 10; i++) {}
   count.value += 1
-  const result = await fetch('https://fakerapi.it/api/v1/persons?_quantity=2', {
-    method: 'get'
-  }).then((r) => r.json())
-  list.value = result.data
+  getList()
 })
 
 const handleIncrease = () => {

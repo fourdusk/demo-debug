@@ -4,9 +4,11 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite App</title>
+    <title>Demo Debug</title>
+    <script src="/js/rrweb-record.min.js"></script>
+    <script src="/js/rrweb-record-pack.min.js"></script>
     <script>
-      // const globalReport = (url, params = {}) => {
+      // const report = (url, params = {}) => {
       //   const tmpList = []
       //   for (const k of Object.keys(params)) {
       //     tmpList.push(`${k}=${params[k]}`)
@@ -15,8 +17,24 @@
       //   const img = new Image()
       //   img.src = fullUrl
       // }
+      const events = [[]]
 
-      const globalGetStackInfo = (stack) => {
+      rrwebRecord({
+        emit(event, isCheckOut) {
+          if (isCheckOut) {
+            events.push([])
+          }
+          const lastEvents = events[events.length - 1]
+          lastEvents.push(event)
+        },
+        checkoutEveryNms: 20 * 1000,
+        packFn: rrwebRecordPack.pack
+      })
+      const report = (url, data) => {
+        navigator.sendBeacon(url, JSON.stringify(data))
+      }
+
+      const getStackInfo = (stack) => {
         if (typeof stack === 'string') {
           const matchResult = stack.match(/at\s+(.+):(\d+):(\d+)/)
           if (matchResult) {
@@ -50,11 +68,11 @@
               fileName: event.filename,
               line: event.lineno,
               column: event.colno,
-              message: event.message
+              message: event.message,
+              events: events[events.length - 1]
             }
           }
-          // globalReport('http://localhost:3000/api/monitor/report', data)
-          navigator.sendBeacon('http://localhost:3000/api/monitor', JSON.stringify(data))
+          report('http://localhost:3000/api/monitor', data)
         },
         true
       )
@@ -69,14 +87,14 @@
           } else if (typeof reason === 'object') {
             message = reason.message
             if (reason.stack) {
-              const stackInfo = globalGetStackInfo(reason.stack)
+              const stackInfo = getStackInfo(reason.stack)
               stack = reason.stack
               fileName = stackInfo.fileName
               line = Number(stackInfo.line)
               column = Number(stackInfo.column)
             }
           }
-          data = {
+          const data = {
             url: location.href,
             mainType: 'error',
             subType: 'promiseError',
@@ -84,10 +102,10 @@
             fileName,
             line,
             column,
-            message
+            message,
+            events: events[events.length - 1]
           }
-          // globalReport('http://localhost:3000/api/monitor/report', data)
-          navigator.sendBeacon('http://localhost:3000/api/monitor', JSON.stringify(data))
+          report('http://localhost:3000/api/monitor', data)
         },
         true
       )
