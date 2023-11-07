@@ -50,8 +50,8 @@ onMounted(async () => {
 })
 
 const handleIncrease = () => {
-  // b.trim()
   count.value += 1
+  b.trim()
   new Promise((resolve) => {
     this.aaa()
     resolve(1)

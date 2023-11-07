@@ -9,14 +9,10 @@ import router from './router'
 
 const app = createApp(App)
 
-app.config.errorHandler = err => {
-  console.table( err);
-  setTimeout(() => {
-    throw err
-  })
+app.config.errorHandler = () => {
+  // throw err
 }
 
-app.config.globalProperties
 app.use(createPinia())
 app.use(router)
 

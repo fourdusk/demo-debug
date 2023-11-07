@@ -116,5 +116,17 @@
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
+    <script type="module">
+      const Vue = window.Vue || document.querySelector('#app')?.__vue_app__
+      if (Vue?.config) {
+        const _oldErrorHandler = Vue.config.errorHandler
+        Vue.config.errorHandler = function (err, vm, info) {
+          if (typeof _oldErrorHandler === 'function') {
+            _oldErrorHandler.call(this, err, vm, info)
+            throw err
+          }
+        }
+      }
+    </script>
   </body>
 </html>
